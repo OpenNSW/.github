@@ -1,11 +1,13 @@
 # OpenNSW
-**_National Single Window for Trade Facilitation_**
+**_Digital Public Infrastructure for National Single Windows & Cross-Agency Orchestration_**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
-**OpenNSW** is a centralized platform designed to streamline international trade by providing a single entry point for traders to interact with various Government Agencies. By decoupling process orchestration from domain-specific data, OpenNSW ensures a scalable and flexible ecosystem for managing consignments, certifications, and regulatory approvals.
+**OpenNSW** is a digital public infrastructure (DPI) platform designed to establish National Single Windows (NSWs) and cross-agency process orchestration. By decoupling workflow state and process orchestration from domain-specific data, OpenNSW provides a highly scalable, secure, and flexible ecosystem for managing multi-agency applications, permits, certifications, and regulatory approvals.
 
-**MVP Focus:** The initial release targets agricultural and food product exports (such as plant quarantine and coconut products), focusing on high-revenue HS codes with shared processes. The system handles consignment-level workflows such as Country of Origin certificates and Export Licenses, while injecting pre-consignment requirements (Business Registration, Environmental Protection License, TIN) via one-time verification.
+While the primary reference implementation is tailored for Trade Facilitation (handling consignment-level workflows), the core engine is domain-agnostic and can be easily configured to support other single-window use cases, such as Board of Investment (BoI) approvals, business registrations, or licensing hubs.
+
+**Reference Implementation & MVP Focus:** The initial reference deployment (`nsw-srilanka`) targets a trade-specific window, focusing on agricultural and food product exports (such as plant quarantine and coconut products) across high-revenue HS codes. It orchestrates consignment-level workflows like Country of Origin certificates and Export Licenses, while injecting pre-consignment credentials (such as Business Registration, Environmental Protection License, and TIN) via one-time verification.
 
 <p align="center">
   • <a href="#repositories">Repositories</a>
@@ -25,7 +27,7 @@
 The OpenNSW platform is organized across the following core repositories:
 
 * **[core](https://github.com/OpenNSW/core):** A reusable Go SDK and workflow orchestration engine. It contains core packages for running long-lived Temporal workflows, micro interactive tasks (human-in-the-loop steps), payments, notifications, file storage, and authentication/authorization middleware.
-* **[nsw-agency](https://github.com/OpenNSW/nsw-agency):** A pluggable, multi-tenant portal system that enables government or private agencies to review and approve trader-submitted data. A single codebase runs all agencies (e.g. NPQS, FCAU, CDA, SLPA), resolving branding and identity via environment variables at runtime.
+* **[nsw-agency](https://github.com/OpenNSW/nsw-agency):** A pluggable, multi-tenant portal system that enables government or private agencies to review and approve applicant-submitted data. A single codebase runs all agencies (e.g. NPQS, FCAU, CDA, SLPA), resolving branding and identity via environment variables at runtime.
 * **[nsw-srilanka](https://github.com/OpenNSW/nsw-srilanka):** The deployer-specific application repository for the Sri Lanka instance of NSW. It wires together the `core` SDK with Sri Lanka–specific workflows (NPQS phytosanitary, FCAU health certificates, CDA, etc.), payment integrations (GovPay/LankaPay), and the Trader Portal frontend.
 * **[nsw-gitops](https://github.com/OpenNSW/nsw-gitops):** The single source of truth for the continuous delivery of the NSW platform, utilizing ArgoCD and Helm umbrella charts for deploying infrastructure and applications to OpenShift.
 
@@ -33,31 +35,31 @@ The OpenNSW platform is organized across the following core repositories:
 
 ## Why OpenNSW?
 
-OpenNSW eliminates the complexity of manual, fragmented trade processes. It acts as the "orchestrator" for trade, allowing traders to submit documentation once and track the entire lifecycle of their consignment across multiple agencies.
+OpenNSW eliminates the complexity of manual, fragmented processes across multiple government bodies. It acts as the "central orchestrator," allowing users (such as traders, applicants, or business owners) to submit documentation once and track the entire lifecycle of their requests across all involved agencies.
 
 Key architectural benefits include:
 
-* **State vs. Data Decoupling:** The Core platform manages the workflow/process state, while independent Agency Portals handle specific domain-specific data.
-* **Isolated Agency Modules:** Each agency maintains its own database and portal logic, ensuring data sovereignty and system stability.
-* **Interoperability:** Seamlessly integrates with the National Data Exchange (NDX) for common data and ASYCUDA for customs finalization.
-* **One-Time Verification:** Injects pre-consignment requirements (Business Registration, TIN, Environmental Protection License) directly into the workflow to reduce repetitive submissions.
+* **State vs. Data Decoupling:** The Core platform manages the workflow/process state, while independent, pluggable Agency Portals manage domain-specific database schemas.
+* **Isolated Agency Modules:** Each agency maintains its own database and portal logic, ensuring data sovereignty, compliance, and system stability.
+* **Interoperability:** Seamlessly integrates with the National Data Exchange (NDX) for common data, as well as external destination systems (such as ASYCUDA for customs finalization in the trade reference implementation).
+* **One-Time Verification:** Injects pre-requisite requirements (Business Registration, TIN, licensing) directly into the workflow to reduce repetitive submissions.
 
 ---
 
 ## Key Features
 
-OpenNSW offers powerful capabilities that streamline international trade processes:
+OpenNSW offers powerful capabilities that streamline cross-agency workflows:
 
 | Feature | Status |
 |---------|--------|
 | **Core Platform Engine** – JSON-DSL-driven process orchestration managing process states without awareness of agency-specific data schemas | Implemented |
-| **Trader Portal** – Single entry point for Traders to initiate consignments and track global status | Implemented |
+| **Trader / Applicant Portal** – Single entry point for users to initiate applications and track global status | Implemented |
 | **Pluggable Agency Portals** – Independent units with agency-specific logic, databases, and officer portals (e.g., NPQS, FCAU, CDA, SLPA) | Implemented |
 | **One-Time Verification** – Pre-consignment document injection (Business Registration, TIN, Environmental Protection License) | Implemented |
 | **Automated Notifications** – Email and SMS alerts via background notification workers / Go task plugins | Implemented |
-| **ASYCUDA Interface** – Automated handoff to Customs system upon completion of all agency approvals | Planned |
+| **ASYCUDA Interface** – Automated handoff to Customs system upon completion of all agency approvals (Trade-specific) | Planned |
 | **NDX Integration** – Fetching common data (BR number, VAT number) from external government providers | Under Evaluation |
-| **Identity Provider Integration** – Centralized account management for Traders, Agency officers, and NSW Admins | Implemented |
+| **Identity Provider Integration** – Centralized account management for Traders/Applicants, Agency officers, and NSW Admins | Implemented |
 | **Observability Stack** – Built-in OpenTelemetry for metrics, tracing, and logging | Planned |
 
 ---
@@ -80,6 +82,7 @@ OpenNSW/
 └── nsw-gitops/            # ArgoCD & Helm umbrella charts for continuous delivery
 ```
 
+
 ---
 
 ## System Architecture
@@ -88,36 +91,36 @@ The NSW system is built on a distributed microservices architecture to maintain 
 
 ### Core Components
 
-* **Identity Provider (IDP):** Manages all accounts for Traders, Agency officers, and NSW Admins. Provides centralized authentication and authorization.
-* **Trader Portal:** Single entry point for Traders to initiate consignments and track global status across all agencies.
+* **Identity Provider (IDP):** Manages all accounts for Traders/Applicants, Agency officers, and NSW Admins. Provides centralized authentication and authorization.
+* **Trader / Applicant Portal:** Single entry point for users to initiate requests (e.g., trade consignments, licenses) and track global status across all agencies.
 * **Core Workflow Engine:** Orchestrates process states (e.g., "Waiting for Approval") using a BPMN 2.0 interpreter, agnostic to agency-specific data schemas.
 * **Agency Portals:** Independent, pluggable units containing agency-specific review logic, SQLite/Postgres databases, and officer portals.
 * **National Data Exchange (NDX):** Bridge for fetching common trade data (BR number, VAT number) from external government systems.
-* **ASYCUDA Integration:** Automated handoff to Customs system upon completion of all agency approvals.
+* **ASYCUDA Integration:** Automated handoff to Customs system upon completion of all agency approvals (Trade-specific).
 
 ### Architecture Principles
 
 * **State vs. Data Decoupling:** The Core platform manages Process State, while independent Agency Portals manage Domain Data (e.g., certificate details, specifications). This separation ensures the core workflow remains agnostic to agency-specific schemas.
 * **Isolated Agency Databases:** Each agency maintains its own database (SQLite/Postgres) and portal logic, ensuring data sovereignty and system stability.
-* **Dual Portal Views:** Traders interact with the unified Trader Portal (in `nsw-srilanka`) to submit data, while Agency Officers use dedicated Agency Portals (in `nsw-agency`) to review and approve submissions.
+* **Dual Portal Views:** Applicants/Traders interact with the unified portal to submit data, while Agency Officers use dedicated Agency Portals (in `nsw-agency`) to review and approve submissions.
 * **Source of Truth:** Agency-specific data resides in the agency's own database, keeping it isolated from the core NSW database.
 * **Callback-Based Workflow:** Agency systems send success/fail callbacks to the Core backend via M2M APIs to advance the workflow state machine.
 
-### The Consignment Journey
+### The End-to-End Application Journey
 
-1. **Initialization:** Trader selects an HS Code through the Trader Portal; the Core Workflow Engine triggers the relevant BPMN workflow.
-2. **Submission:** Trader submits agency-specific forms via the Trader Portal, which are injected into the respective Agency's backend.
+1. **Initialization:** User selects a workflow/HS code through the portal; the Core Workflow Engine triggers the relevant process path.
+2. **Submission:** User submits agency-specific forms via the portal, which are injected into the respective Agency's backend.
 3. **Notification:** The Agency system alerts the relevant officer via email or SMS.
 4. **Review:** An Agency Officer reviews the submission within their isolated Agency Portal.
 5. **Decision:** The Officer approves or denies the request within their portal.
 6. **Callback:** The Agency backend sends a success/fail callback to the NSW Core backend to advance the workflow state.
-7. **Finalization:** Once all agency approvals are complete, the Core backend initiates the Customs (ASYCUDA) interface.
+7. **Finalization:** Once all agency approvals are complete, the Core backend triggers the final target interface (e.g., customs ASYCUDA handoff for the trade window).
 
 ---
 
 ## Getting Started
 
-To run the full local development environment, you will run `nsw-srilanka` and `nsw-agency` side-by-side.
+To run the full local development environment, you will run the deployer app (e.g. `nsw-srilanka`) and `nsw-agency` side-by-side.
 
 **Prerequisites:** Go 1.26+, Node.js (with `pnpm`), Docker, Temporal CLI
 
@@ -146,18 +149,6 @@ cp frontend/.env.example frontend/.env
 # Wipe databases and start fresh:
 ./start-dev.sh all --clean-run
 ```
-
-### Local Services URL Map
-
-| Service / Portal | URL | Port / Config |
-|------------------|-----|---------------|
-| **Trader Portal** | http://localhost:5173 | Frontend Vite Server |
-| **NSW Core API Backend** | http://localhost:8080 | Go HTTP Server |
-| **Identity Provider (IDP)** | https://localhost:8090 | Thunder IDP |
-| **NPQS Agency Portal** | http://localhost:5174 | Backend Port: `8081` |
-| **FCAU Agency Portal** | http://localhost:5175 | Backend Port: `8082` |
-| **CDA Agency Portal** | http://localhost:5176 | Backend Port: `8083` |
-| **SLPA Agency Portal** | http://localhost:5177 | Backend Port: `8084` |
 
 ---
 
