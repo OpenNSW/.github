@@ -50,14 +50,15 @@ Country-specific Single Windows built with the building blocks.
 | **[nsw-srilanka](https://github.com/OpenNSW/nsw-srilanka)** | Sri Lanka's Trade Single Window, the first implementation built with OpenNSW. |
 | **[one-trade-artifacts](https://github.com/OpenNSW/one-trade-artifacts)** | Workflows, forms, routing rules and agency task configurations for Sri Lanka's Trade Single Window. |
 
-### Recommended open-source components
+### Required and recommended components
 
-A Single Window also relies on services that OpenNSW does not build itself. We recommend:
+A Single Window also relies on open-source projects that OpenNSW does not build itself:
 
-| Component | Project | Description |
-|-----------|---------|-------------|
-| Identity Provider | **[ThunderID](https://thunderid.dev/)** ([GitHub](https://github.com/thunder-id)) | Open-source identity stack for authenticating and authorizing people and machines, based on OpenID Connect and OAuth 2.0. |
-| Audit Service | **[Argus](https://github.com/LSFLK/argus)** | Centralized audit logging service with tamper-evident hash chaining and cryptographic signatures. |
+| Project | Used as | Status | Description |
+|---------|---------|--------|-------------|
+| **[Temporal](https://temporal.io/)** ([GitHub](https://github.com/temporalio)) | Workflow runtime | **Required** | Durable execution platform that the `core` workflow engine runs on, so every Single Window built with OpenNSW needs a Temporal server. |
+| **[ThunderID](https://thunderid.dev/)** ([GitHub](https://github.com/thunder-id)) | Identity Provider | Recommended | Open-source identity stack for authenticating and authorizing people and machines, based on OpenID Connect and OAuth 2.0. |
+| **[Argus](https://github.com/LSFLK/argus)** | Audit Service | Recommended | Centralized audit logging service with tamper-evident hash chaining and cryptographic signatures. |
 
 ---
 
@@ -74,7 +75,7 @@ flowchart TB
     subgraph sw["Single Window"]
         portal["Applicant Portal<br/>built with ui-packages"]
         backend["SW Backend<br/>built with core"]
-        engine["Workflow Engine<br/>Temporal"]
+        engine["Workflow Runtime<br/>Temporal · required"]
         db[("Database<br/>PostgreSQL")]
         storage[("Document Storage")]
         artifacts[("Configuration Artifacts<br/>workflows, forms, rules")]
@@ -112,7 +113,7 @@ Solid lines are the main request flow. Dashed lines are identity (sign-in and to
 |-----------|----------------|-----------|--------------------------|
 | **Applicant Portal** | Single entry point where applicants start applications, fill in forms, upload documents, pay fees and track progress. | Required | Your web app, using [ui-packages](https://github.com/OpenNSW/ui-packages) for schema-driven forms |
 | **SW Backend** | APIs, workflow and task orchestration, routing to agencies, payments and notifications. | Required | Your Go application, built with [core](https://github.com/OpenNSW/core) |
-| **Workflow Engine** | Durable execution of long-running, multi-agency workflows. | Required | [Temporal](https://temporal.io/) |
+| **Workflow Runtime** | Durable execution for the `core` workflow engine, so long-running, multi-agency workflows survive failures and restarts. | **Required** | [Temporal](https://temporal.io/) |
 | **Database** | Application, task and payment state. | Required | PostgreSQL |
 | **Document Storage** | Documents uploaded during an application. | Required | S3-compatible object storage or a local file system |
 | **Configuration Artifacts** | Versioned workflow definitions, forms, UI layouts and routing rules. | Required | JSON files loaded by `core` from GitHub, S3 or a local directory |
