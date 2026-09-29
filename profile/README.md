@@ -1,170 +1,181 @@
 # OpenNSW
-**_Digital Public Infrastructure for National Single Windows & Cross-Agency Orchestration_**
+**_Open-source Digital Public Infrastructure for building National Single Window systems_**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
-**OpenNSW** is a digital public infrastructure (DPI) platform designed to establish National Single Windows (NSWs) and cross-agency process orchestration. By decoupling workflow state and process orchestration from domain-specific data, OpenNSW provides a highly scalable, secure, and flexible ecosystem for managing multi-agency applications, permits, certifications, and regulatory approvals.
+**OpenNSW** provides open-source building blocks for **Single Window (SW)** systems: one digital entry point where applicants, such as traders, businesses and citizens, complete processes that need approvals from several government or private agencies. The building blocks handle the reusable parts (long-running workflow orchestration, human-in-the-loop tasks, schema-driven forms and a ready-to-deploy agency system), while each country or domain keeps its own workflows, forms and integrations as configuration and application code.
 
-While the primary reference implementation is tailored for Trade Facilitation (handling consignment-level workflows), the core engine is domain-agnostic and can be easily configured to support other single-window use cases, such as Board of Investment (BoI) approvals, business registrations, or licensing hubs.
-
-**Reference Implementation & MVP Focus:** The initial reference deployment (`nsw-srilanka`) targets a trade-specific window, focusing on agricultural and food product exports (such as plant quarantine and coconut products) across high-revenue HS codes. It orchestrates consignment-level workflows like Country of Origin certificates and Export Licenses, while injecting pre-consignment credentials (such as Business Registration, Environmental Protection License, and TIN) via one-time verification.
+Trade facilitation is the first use case, but the building blocks are domain-agnostic and can power other single-window services such as investment approvals, business registration and licensing.
 
 <p align="center">
-  • <a href="#repositories">Repositories</a>
-  • <a href="#why-opennsw">Why OpenNSW?</a> •
-  <a href="#key-features">Key Features</a> •
-  <a href="#getting-started">Getting Started</a> •
-  <a href="#deployment">Deployment</a> •
-  <a href="#system-architecture">System Architecture</a> •
+  <a href="#what-is-a-single-window">What is a Single Window?</a> •
+  <a href="#repositories">Repositories</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#roadmap">Roadmap</a> •
   <a href="#contributing">Contributing</a> •
-  <a href="#license">License</a> •
+  <a href="#license">License</a>
 </p>
+
+---
+
+## What is a Single Window?
+
+Without a Single Window, applicants deal with each agency separately: they enter the same information again and again, and chase approvals one office at a time. A Single Window:
+
+* **Gives applicants one entry point** to start an application and track its progress across every agency involved.
+* **Captures shared information once** and reuses it for each agency's requirements.
+* **Orchestrates long-running, multi-agency processes** such as parallel reviews, amendment requests, fees, inspections and certificates, which can span days or weeks.
+* **Lets each agency keep its own data and decisions**, integrating through well-defined APIs.
 
 ---
 
 ## Repositories
 
-The OpenNSW platform is organized across the following core repositories:
+### Building blocks
 
-* **[core](https://github.com/OpenNSW/core):** A reusable Go SDK and workflow orchestration engine. It contains core packages for running long-lived Temporal workflows, micro interactive tasks (human-in-the-loop steps), payments, notifications, file storage, and authentication/authorization middleware.
-* **[nsw-agency](https://github.com/OpenNSW/nsw-agency):** A pluggable, multi-tenant portal system that enables government or private agencies to review and approve applicant-submitted data. A single codebase runs all agencies (e.g. NPQS, FCAU, CDA, SLPA), resolving branding and identity via environment variables at runtime.
-* **[nsw-srilanka](https://github.com/OpenNSW/nsw-srilanka):** The deployer-specific application repository for the Sri Lanka instance of NSW. It wires together the `core` SDK with Sri Lanka–specific workflows (NPQS phytosanitary, FCAU health certificates, CDA, etc.), payment integrations (GovPay/LankaPay), and the Trader Portal frontend.
-* **[nsw-gitops](https://github.com/OpenNSW/nsw-gitops):** The single source of truth for the continuous delivery of the NSW platform, utilizing ArgoCD and Helm umbrella charts for deploying infrastructure and applications to OpenShift.
+Generic, reusable components for building any Single Window.
 
----
+| Repository | Description |
+|------------|-------------|
+| **[core](https://github.com/OpenNSW/core)** | Go SDK for building Single Window backends: importable packages, not a deployable application. Includes a Temporal-backed, JSON-DSL workflow engine, human-in-the-loop task orchestration, a versioned configuration (artifact) registry, pluggable payments, notifications, file storage and outbound integrations, and JWT / OAuth 2.0 scope-based auth middleware. |
+| **[ui-packages](https://github.com/OpenNSW/ui-packages)** | Shared UI packages for Single Window portals. Currently ships [`@opennsw/jsonforms-renderers`](https://www.npmjs.com/package/@opennsw/jsonforms-renderers), a set of [JSON Forms](https://jsonforms.io/) renderers for React (Radix Themes) that render schema-driven forms, with file uploads, searchable selects, spreadsheet and XML import/export, and computed fields. |
+| **[agency](https://github.com/OpenNSW/agency)** | Deployable system for agencies that don't have a digital system to integrate with the Single Window. Officers receive submissions, review them and send decisions back to the Single Window. Each agency runs its own instance with its own database, branding and configuration. Published as a container image and Helm chart. |
 
-## Why OpenNSW?
+### Implementations
 
-OpenNSW eliminates the complexity of manual, fragmented processes across multiple government bodies. It acts as the "central orchestrator," allowing users (such as traders, applicants, or business owners) to submit documentation once and track the entire lifecycle of their requests across all involved agencies.
+Country-specific Single Windows built with the building blocks.
 
-Key architectural benefits include:
+| Repository | Description |
+|------------|-------------|
+| **[nsw-srilanka](https://github.com/OpenNSW/nsw-srilanka)** | Sri Lanka's Trade Single Window, the first implementation built with OpenNSW. |
+| **[one-trade-artifacts](https://github.com/OpenNSW/one-trade-artifacts)** | Workflows, forms, routing rules and agency task configurations for Sri Lanka's Trade Single Window. |
 
-* **State vs. Data Decoupling:** The Core platform manages the workflow/process state, while independent, pluggable Agency Portals manage domain-specific database schemas.
-* **Isolated Agency Modules:** Each agency maintains its own database and portal logic, ensuring data sovereignty, compliance, and system stability.
-* **Interoperability:** Seamlessly integrates with the National Data Exchange (NDX) for common data, as well as external destination systems (such as ASYCUDA for customs finalization in the trade reference implementation).
-* **One-Time Verification:** Injects pre-requisite requirements (Business Registration, TIN, licensing) directly into the workflow to reduce repetitive submissions.
+### Recommended open-source components
 
----
+A Single Window also relies on services that OpenNSW does not build itself. We recommend:
 
-## Key Features
-
-OpenNSW offers powerful capabilities that streamline cross-agency workflows:
-
-| Feature | Status |
-|---------|--------|
-| **Core Platform Engine** – JSON-DSL-driven process orchestration managing process states without awareness of agency-specific data schemas | Implemented |
-| **Trader / Applicant Portal** – Single entry point for users to initiate applications and track global status | Implemented |
-| **Pluggable Agency Portals** – Independent units with agency-specific logic, databases, and officer portals (e.g., NPQS, FCAU, CDA, SLPA) | Implemented |
-| **One-Time Verification** – Pre-consignment document injection (Business Registration, TIN, Environmental Protection License) | Implemented |
-| **Automated Notifications** – Email and SMS alerts via background notification workers / Go task plugins | Implemented |
-| **ASYCUDA Interface** – Automated handoff to Customs system upon completion of all agency approvals (Trade-specific) | Planned |
-| **NDX Integration** – Fetching common data (BR number, VAT number) from external government providers | Under Evaluation |
-| **Identity Provider Integration** – Centralized account management for Traders/Applicants, Agency officers, and NSW Admins | Implemented |
-| **Observability Stack** – Built-in OpenTelemetry for metrics, tracing, and logging | Planned |
+| Component | Project | Description |
+|-----------|---------|-------------|
+| Identity Provider | **[ThunderID](https://thunderid.dev/)** ([GitHub](https://github.com/thunder-id)) | Open-source identity stack for authenticating and authorizing people and machines, based on OpenID Connect and OAuth 2.0. |
+| Audit Service | **[Argus](https://github.com/LSFLK/argus)** | Centralized audit logging service with tamper-evident hash chaining and cryptographic signatures. |
 
 ---
 
-## Project Structure
+## Architecture
 
-The OpenNSW ecosystem layout is structured as follows across its repositories:
+### Minimal Single Window architecture
 
-```
-OpenNSW/
-├── core/                  # Reusable Go SDK (workflow interpreter, task manager, payments)
-├── nsw-agency/            # Pluggable Agency review portals (SQLite/Postgres)
-│   ├── backend/           # Go application server & database migrations
-│   └── frontend/          # React/Vite portal for Agency officers
-├── nsw-srilanka/          # Sri Lanka deployment instance
-│   ├── configs/           # Agency workflows (CDA, FCAU, NPQS JSONForms)
-│   ├── portals/           # Trader Portal frontend (React/Vite)
-│   ├── cmd/server/        # NSW Backend API Server
-│   └── idp/               # Identity Provider config
-└── nsw-gitops/            # ArgoCD & Helm umbrella charts for continuous delivery
-```
+```mermaid
+flowchart TB
+    applicant(["Applicant"])
+    officer(["Agency officer"])
+    idp["Identity Provider<br/>ThunderID · required"]
 
+    subgraph sw["Single Window"]
+        portal["Applicant Portal<br/>built with ui-packages"]
+        backend["SW Backend<br/>built with core"]
+        engine["Workflow Engine<br/>Temporal"]
+        db[("Database<br/>PostgreSQL")]
+        storage[("Document Storage")]
+        artifacts[("Configuration Artifacts<br/>workflows, forms, rules")]
+    end
 
----
+    subgraph agencies["Agency systems · one per agency"]
+        agencyApp["OpenNSW Agency<br/>for agencies without a digital system"]
+        agencySys["Agency's own system"]
+    end
 
-## System Architecture
+    audit["Audit Service<br/>Argus · depends on context"]
+    ext["External systems<br/>payments, email/SMS, domain systems"]
 
-The NSW system is built on a distributed microservices architecture to maintain high availability and modularity.
+    applicant --> portal
+    applicant -.->|sign in| idp
+    officer -.->|sign in| idp
+    officer --> agencies
+    portal -->|REST| backend
+    agencies <-->|submissions and decisions| backend
+    idp -.-|tokens| backend
+    backend --> engine & db & storage
+    backend -.->|loads| artifacts
+    backend -.->|audit events| audit
+    backend -.-> ext
 
-### Core Components
-
-* **Identity Provider (IDP):** Manages all accounts for Traders/Applicants, Agency officers, and NSW Admins. Provides centralized authentication and authorization.
-* **Trader / Applicant Portal:** Single entry point for users to initiate requests (e.g., trade consignments, licenses) and track global status across all agencies.
-* **Core Workflow Engine:** Orchestrates process states (e.g., "Waiting for Approval") using a BPMN 2.0 interpreter, agnostic to agency-specific data schemas.
-* **Agency Portals:** Independent, pluggable units containing agency-specific review logic, SQLite/Postgres databases, and officer portals.
-* **National Data Exchange (NDX):** Bridge for fetching common trade data (BR number, VAT number) from external government systems.
-* **ASYCUDA Integration:** Automated handoff to Customs system upon completion of all agency approvals (Trade-specific).
-
-### Architecture Principles
-
-* **State vs. Data Decoupling:** The Core platform manages Process State, while independent Agency Portals manage Domain Data (e.g., certificate details, specifications). This separation ensures the core workflow remains agnostic to agency-specific schemas.
-* **Isolated Agency Databases:** Each agency maintains its own database (SQLite/Postgres) and portal logic, ensuring data sovereignty and system stability.
-* **Dual Portal Views:** Applicants/Traders interact with the unified portal to submit data, while Agency Officers use dedicated Agency Portals (in `nsw-agency`) to review and approve submissions.
-* **Source of Truth:** Agency-specific data resides in the agency's own database, keeping it isolated from the core NSW database.
-* **Callback-Based Workflow:** Agency systems send success/fail callbacks to the Core backend via M2M APIs to advance the workflow state machine.
-
-### The End-to-End Application Journey
-
-1. **Initialization:** User selects a workflow/HS code through the portal; the Core Workflow Engine triggers the relevant process path.
-2. **Submission:** User submits agency-specific forms via the portal, which are injected into the respective Agency's backend.
-3. **Notification:** The Agency system alerts the relevant officer via email or SMS.
-4. **Review:** An Agency Officer reviews the submission within their isolated Agency Portal.
-5. **Decision:** The Officer approves or denies the request within their portal.
-6. **Callback:** The Agency backend sends a success/fail callback to the NSW Core backend to advance the workflow state.
-7. **Finalization:** Once all agency approvals are complete, the Core backend triggers the final target interface (e.g., customs ASYCUDA handoff for the trade window).
-
----
-
-## Getting Started
-
-To run the full local development environment, you will run the deployer app (e.g. `nsw-srilanka`) and `nsw-agency` side-by-side.
-
-**Prerequisites:** Go 1.26+, Node.js (with `pnpm`), Docker, Temporal CLI
-
-### Setup & Run Commands
-
-```bash
-# Terminal 1 – Sri Lanka Core Platform (IDP, Temporal, backend, trader-app)
-cd nsw-srilanka
-cp .env.example .env
-cp idp/.env.example idp/.env
-cp configs/services.docker.example.json configs/services.docker.json
-cp configs/payment_methods.example.json configs/payment_methods.json
-cp configs/notification.example.json configs/notification.json
-
-# Start core platform
-make dev
-
-# Terminal 2 – Agency Portals (NPQS, FCAU, CDA, SLPA)
-cd ../nsw-agency
-# Copy environmental configurations
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-
-# Start all agency portals
-./start-dev.sh all
-# Wipe databases and start fresh:
-./start-dev.sh all --clean-run
+    classDef optional stroke-dasharray: 5 5
+    class audit,ext optional
 ```
 
+Solid lines are the main request flow. Dashed lines are identity (sign-in and tokens), configuration loading, audit events and external integrations. Dashed boxes are components whose need depends on the deployment.
+
+### Components
+
+| Component | Responsibility | Required? | Build with / recommended |
+|-----------|----------------|-----------|--------------------------|
+| **Applicant Portal** | Single entry point where applicants start applications, fill in forms, upload documents, pay fees and track progress. | Required | Your web app, using [ui-packages](https://github.com/OpenNSW/ui-packages) for schema-driven forms |
+| **SW Backend** | APIs, workflow and task orchestration, routing to agencies, payments and notifications. | Required | Your Go application, built with [core](https://github.com/OpenNSW/core) |
+| **Workflow Engine** | Durable execution of long-running, multi-agency workflows. | Required | [Temporal](https://temporal.io/) |
+| **Database** | Application, task and payment state. | Required | PostgreSQL |
+| **Document Storage** | Documents uploaded during an application. | Required | S3-compatible object storage or a local file system |
+| **Configuration Artifacts** | Versioned workflow definitions, forms, UI layouts and routing rules. | Required | JSON files loaded by `core` from GitHub, S3 or a local directory |
+| **Identity Provider** | Sign-in for applicants, agency officers and administrators, and OAuth 2.0 clients for system-to-system calls. | **Required** | [ThunderID](https://thunderid.dev/) |
+| **Agency systems** | Where agency officers review submissions and record decisions. | Required (one per agency) | The agency's existing system, integrated through the Single Window's API, or an [agency](https://github.com/OpenNSW/agency) instance |
+| **Audit Service** | Tamper-evident record of who did what, and when. | **Depends on context:** required where laws or policies demand an audit trail (typical for production government services), optional for pilots and sandboxes | [Argus](https://github.com/LSFLK/argus) |
+| **External integrations** | Payment gateways, email and SMS, and domain systems such as customs for a trade Single Window. | Optional | Pluggable providers in `core` |
+
+### How an application flows
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Applicant
+    participant Portal as Applicant Portal
+    participant IdP as Identity Provider
+    participant SW as SW Backend
+    participant Agency as Agency system
+    actor Officer as Agency officer
+
+    Applicant->>Portal: Sign in
+    Portal->>IdP: OIDC login
+    IdP-->>Portal: Access token
+    Applicant->>Portal: Start an application
+    Portal->>SW: Create application
+    SW->>SW: Start workflow and find the required agencies
+    loop Each required agency (in parallel)
+        Applicant->>Portal: Complete the agency's form (shared details reused)
+        Portal->>SW: Submit
+        SW->>Agency: Send submission (OAuth 2.0 client credentials)
+        Officer->>Agency: Review
+        Agency->>SW: Send decision (approve, request changes or reject)
+        SW->>SW: Advance the workflow (next step, amendment, fee or certificate)
+        SW-->>Portal: Status update
+    end
+    SW-->>Portal: Application complete
+```
+
+### Design principles
+
+* **Process state vs. domain data:** the Single Window tracks where each application is in its process, while agencies keep their domain data and decisions in their own systems.
+* **Configuration over code:** workflows, forms, UI layouts and routing rules are versioned configuration artifacts, so most process changes need no code changes.
+* **Agency data sovereignty:** each agency runs its own system and database, and integrates through a simple contract: receive a submission, send back a decision.
+* **Bring your own agency system:** agencies with a digital system integrate through APIs; agencies without one deploy [OpenNSW Agency](https://github.com/OpenNSW/agency).
+* **Standards-based security:** OpenID Connect sign-in for people, OAuth 2.0 client credentials for systems, and scope-based authorization on API calls.
+* **Durable, long-running processes:** applications can run for days or weeks, with parallel agency reviews, amendments, fees and timers, and survive restarts.
+
 ---
 
-## Deployment
+## Roadmap
 
-Deployment of the OpenNSW ecosystem is fully containerized and automated:
-
-* **Continuous Delivery (GitOps):** Managed via [nsw-gitops](https://github.com/OpenNSW/nsw-gitops), using ArgoCD to deploy Helm umbrella charts (`infra-umbrella` for backing services and `apps-umbrella` for the application tier) on OpenShift.
-* **CI/CD Workflows:** Individual repositories contain GitHub Actions workflows to validate builds, run tests, and publish Docker images to GHCR (e.g. `nsw-agency` release workflows).
+* **Farajaland example Single Window:** a sample Single Window implementation for Farajaland, a fictional country, with fictional agencies, workflows and data. Anyone will be able to run it and walk through a complete Single Window end-to-end.
 
 ---
 
 ## Contributing
 
-Thank you for wanting to contribute to the National Single Window project. Please see the individual repository `CONTRIBUTING.md` files for more details.
+Contributions are welcome. Open an issue or pull request in the relevant repository, and see its README and contributing guide for setup and conventions.
 
-## License 
+## License
 
-Distributed under the Apache 2.0 License. See [License](https://www.apache.org/licenses/LICENSE-2.0) for more information.
+The OpenNSW building blocks [core](https://github.com/OpenNSW/core) and [ui-packages](https://github.com/OpenNSW/ui-packages) are licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). See each repository for its license.
+
+---
+
+<p align="center">An initiative of <a href="https://github.com/LSFLK">Lanka Software Foundation</a></p>
