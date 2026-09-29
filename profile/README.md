@@ -59,6 +59,7 @@ A Single Window also relies on open-source projects that OpenNSW does not build 
 | **[Temporal](https://temporal.io/)** ([GitHub](https://github.com/temporalio)) | Workflow runtime | **Required** | Durable execution platform that the `core` workflow engine runs on, so every Single Window built with OpenNSW needs a Temporal server. |
 | **[ThunderID](https://thunderid.dev/)** ([GitHub](https://github.com/thunder-id)) | Identity Provider | Recommended | Open-source identity stack for authenticating and authorizing people and machines, based on OpenID Connect and OAuth 2.0. |
 | **[Argus](https://github.com/LSFLK/argus)** | Audit Service | Recommended | Centralized audit logging service with tamper-evident hash chaining and cryptographic signatures. |
+| **[PingMailer](https://github.com/OpenGovMail/pingmailer)** | Email notifications | Recommended | Self-hosted service from OpenGovMail for sending no-reply transactional emails to users, with a REST API and customizable templates. |
 
 ---
 
@@ -109,18 +110,19 @@ Solid lines are the main request flow. Dashed lines are identity (sign-in and to
 
 ### Components
 
-| Component | Responsibility | Required? | Build with / recommended |
-|-----------|----------------|-----------|--------------------------|
-| **Applicant Portal** | Single entry point where applicants start applications, fill in forms, upload documents, pay fees and track progress. | Required | Your web app, using [ui-packages](https://github.com/OpenNSW/ui-packages) for schema-driven forms |
-| **SW Backend** | APIs, workflow and task orchestration, routing to agencies, payments and notifications. | Required | Your Go application, built with [core](https://github.com/OpenNSW/core) |
-| **Workflow Runtime** | Durable execution for the `core` workflow engine, so long-running, multi-agency workflows survive failures and restarts. | **Required** | [Temporal](https://temporal.io/) |
-| **Database** | Application, task and payment state. | Required | PostgreSQL |
-| **Document Storage** | Documents uploaded during an application. | Required | S3-compatible object storage or a local file system |
-| **Configuration Artifacts** | Versioned workflow definitions, forms, UI layouts and routing rules. | Required | JSON files loaded by `core` from GitHub, S3 or a local directory |
-| **Identity Provider** | Sign-in for applicants, agency officers and administrators, and OAuth 2.0 clients for system-to-system calls. | **Required** | [ThunderID](https://thunderid.dev/) |
-| **Agency systems** | Where agency officers review submissions and record decisions. | Required (one per agency) | The agency's existing system, integrated through the Single Window's API, or an [agency](https://github.com/OpenNSW/agency) instance |
-| **Audit Service** | Tamper-evident record of who did what, and when. | **Depends on context:** required where laws or policies demand an audit trail (typical for production government services), optional for pilots and sandboxes | [Argus](https://github.com/LSFLK/argus) |
-| **External integrations** | Payment gateways, email and SMS, and domain systems such as customs for a trade Single Window. | Optional | Pluggable providers in `core` |
+| Component | Responsibility | Build with / recommended |
+|-----------|----------------|--------------------------|
+| **Applicant Portal** | Single entry point where applicants start applications, fill in forms, upload documents, pay fees and track progress. | Your web app, using [ui-packages](https://github.com/OpenNSW/ui-packages) for schema-driven forms |
+| **SW Backend** | APIs, workflow and task orchestration, routing to agencies, payments and notifications. | Your Go application, built with [core](https://github.com/OpenNSW/core) |
+| **Workflow Runtime** | Durable execution for the `core` workflow engine, so long-running, multi-agency workflows survive failures and restarts. | [Temporal](https://temporal.io/) |
+| **Database** | Application, task and payment state. | PostgreSQL |
+| **Document Storage** | Documents uploaded during an application. | S3-compatible object storage or a local file system |
+| **Configuration Artifacts** | Versioned workflow definitions, forms, UI layouts and routing rules. | JSON files loaded by `core` from GitHub, S3 or a local directory |
+| **Identity Provider** | Sign-in for applicants, agency officers and administrators, and OAuth 2.0 clients for system-to-system calls. | [ThunderID](https://thunderid.dev/) |
+| **Agency systems** | Where agency officers review submissions and record decisions, one per agency. | The agency's existing system, integrated through the Single Window's API, or an [agency](https://github.com/OpenNSW/agency) instance |
+| **Audit Service** | Tamper-evident record of who did what, and when. Needed where laws or policies demand an audit trail (typical for production government services); optional for pilots and sandboxes. | [Argus](https://github.com/LSFLK/argus) |
+| **Email Notifications** | No-reply emails to users, such as application status updates and requests for changes. | [PingMailer](https://github.com/OpenGovMail/pingmailer) |
+| **External integrations** | Payment gateways, SMS, and domain systems such as customs for a trade Single Window. | Pluggable providers in `core` |
 
 ### How an application flows
 
